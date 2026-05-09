@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  vault:
+    image: hashicorp/vault:1.16
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: server -dev
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  falco:
+    image: falcosecurity/falco-no-driver:latest
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - ./configs/falco_rules.yaml:/etc/falco/falco_rules.local.yaml
+    ports:
+      - "2801:2801"
